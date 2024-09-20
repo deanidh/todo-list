@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
-import { auth, db } from './../utils/firebase/init_firebase';
+import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, onSnapshot, getFirestore, getDocs } from 'firebase/firestore';
 
 const TodoPage = () => {
   const navigate = useNavigate();
+
+  const auth = getAuth();
+  const db = getFirestore();
+
   const [task, setTask] = useState('');
   const [tasks, setTasks] = useState([]);
 
@@ -35,6 +38,13 @@ const TodoPage = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // 읽기 테스트
+  // getDocs(collection(db, 'tasks')).then((querySnapshot) => {
+  //   querySnapshot.forEach((doc) => {
+  //     console.log(doc.data().task);
+  //   });
+  // });
 
   return (
     <div className="frame">
