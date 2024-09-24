@@ -9,7 +9,7 @@
   align-items: center;
   padding: 24px;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 16px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -43,6 +43,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+
+      .todo-list-btn-group {
+        display: flex;
+        gap: 4px;
+
+        button {
+          padding: 2px;
+          background-color: white;
+          color: black;
+        }
+
+        button:nth-child(2) {
+          color: $primary;
+        }
+      }
     }
   }
 }

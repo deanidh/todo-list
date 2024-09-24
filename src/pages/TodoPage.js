@@ -91,7 +91,10 @@ const TodoPage = () => {
                 return (
                   <li key={task.id}>
                     {task.name}
-                    <span>완료</span>
+                    <div className="todo-list-btn-group">
+                      <button>수정</button>
+                      <button>삭제</button>
+                    </div>
                   </li>
                 );
               })}
@@ -102,7 +105,10 @@ const TodoPage = () => {
                 return (
                   <li key={task.id}>
                     {task.name}
-                    <span>미완료</span>
+                    <div className="todo-list-btn-group">
+                      <button>수정</button>
+                      <button>삭제</button>
+                    </div>
                   </li>
                 );
               })}
