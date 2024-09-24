@@ -30,7 +30,11 @@ function App() {
   }, [dispatch, auth]);
 
   if (loading) {
-    return <Loading />;
+    return (
+      <div className="frame">
+        <Loading />;
+      </div>
+    );
   }
 
   return (
