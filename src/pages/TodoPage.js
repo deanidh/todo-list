@@ -2,13 +2,24 @@ import { useState, useEffect } from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, query, onSnapshot, getFirestore, getDocs } from 'firebase/firestore';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../store/reducers/authSlice';
 
 const TodoPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const auth = getAuth();
-  const db = getFirestore();
+  const handleLogout = () => {
+    signOut(auth).then(() => {
+      dispatch(logout());
+      navigate('/');
+    });
+  };
 
+  // const currentUserId = useSelector((state) => state.auth.user);
+
+  const db = getFirestore();
   const [task, setTask] = useState('');
   const [tasks, setTasks] = useState([]);
 
@@ -32,7 +43,11 @@ const TodoPage = () => {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const tasksArray = [];
       querySnapshot.forEach((doc) => {
-        tasksArray.push({ id: doc.id, ...doc.data() });
+        // console.log(currentUserId);
+        // console.log(doc.data().userId);
+        if (doc.userId === auth.currentUser.uid) {
+          tasksArray.push({ id: doc.id, ...doc.data() });
+        }
       });
       setTasks(tasksArray);
     });
@@ -50,13 +65,13 @@ const TodoPage = () => {
     <div className="frame">
       <div className="todo-container">
         <input
-          className="todo-input"
+          className="input"
           type="text"
           value={task}
           onChange={(e) => setTask(e.target.value)}
           placeholder="할 일을 입력하세요"
         />
-        <button className="todo-button" onClick={() => addTask()}>
+        <button className="button" onClick={() => addTask()}>
           추가
         </button>
         <ul className="todo-list">
@@ -69,13 +84,7 @@ const TodoPage = () => {
             );
           })}
         </ul>
-        <button
-          className="todo-logout"
-          onClick={() => {
-            signOut(auth);
-            navigate('/');
-          }}
-        >
+        <button className="todo-logout" onClick={() => handleLogout()}>
           로그아웃
         </button>
       </div>
