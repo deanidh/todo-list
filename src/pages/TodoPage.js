@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, query, getFirestore, getDocs, where, documentId, deleteDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  query,
+  getFirestore,
+  getDocs,
+  where,
+  documentId,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/reducers/authSlice';
 import Loading from '../components/Loading';
@@ -19,11 +30,13 @@ const TodoPage = () => {
 
   const db = getFirestore();
   const currentUserId = useSelector((state) => state.auth.user.uid);
+  const tasks = collection(db, 'tasks');
   const [task, setTask] = useState('');
   const [completedTasks, setCompletedTasks] = useState([]);
   const [incompletedTasks, setIncompletedTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const tasks = collection(db, 'tasks');
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskText, setEditingTaskText] = useState('');
 
   const createTask = async () => {
     try {
@@ -36,7 +49,7 @@ const TodoPage = () => {
       });
       console.log('DB 저장 성공: ', docRef.id);
       setTask('');
-      await updateTasks();
+      await fetchTasks();
     } catch (e) {
       console.log('DB 저장 실패: ', e);
     }
@@ -51,7 +64,7 @@ const TodoPage = () => {
     return result;
   };
 
-  const updateTasks = async () => {
+  const fetchTasks = async () => {
     setLoading(true);
     try {
       setIncompletedTasks(await readTasksByCompleted(false));
@@ -66,37 +79,50 @@ const TodoPage = () => {
   const updateTask = async (id) => {
     setLoading(true);
     try {
-      const q = query(tasks, where(documentId(), '==', id));
-      const querySnapshot = await getDocs(q);
-      console.log(querySnapshot.docs);
+      const docRef = doc(db, 'tasks', id);
+      await updateDoc(docRef, { name: editingTaskText });
     } catch (e) {
-      console.log('DB Update 실패: ', e);
+      console.log('DB 업데이트 실패: ', e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const deleteTask = async (id) => {
     setLoading(true);
     try {
-      const q = query(tasks, where(documentId(), '==', id));
-      const querySnapshot = await getDocs(q);
+      const docRef = doc(db, 'tasks', id);
+      await deleteDoc(docRef);
+      console.log('DB 삭제 완료: ', id);
+      await fetchTasks();
+    } catch (e) {
+      console.log('DB 삭제 실패: ', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await deleteDoc(docRef);
-        console.log('DB 삭제 완료: ', id);
-      } else {
-        console.log('DB Update 실패: id와 일치하는 doc 없음');
-      }
-      updateTasks();
+  const handleEditClick = async (id, text) => {
+    setEditingTaskId(id);
+    setEditingTaskText(text);
+  };
+
+  const handleSaveClick = async (id) => {
+    setLoading(true);
+    try {
+      updateTask(id);
+      await fetchTasks();
+      setEditingTaskId(null);
+      setEditingTaskText('');
     } catch (e) {
       console.log('DB Update 실패: ', e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    updateTasks();
+    fetchTasks();
   }, []);
 
   return (
@@ -120,28 +146,52 @@ const TodoPage = () => {
           <div className="todo-list-wrap">
             <h3>Done</h3>
             <ul className="todo-list">
-              {completedTasks.map((task) => {
-                return (
-                  <li key={task.id}>
-                    {task.name}
-                    <div className="todo-list-btn-group">
-                      <button onClick={() => console.log(123)}>수정</button>
-                      <button onClick={() => deleteTask(task.id)}>삭제</button>
-                    </div>
-                  </li>
-                );
-              })}
+              {completedTasks.map((task) => (
+                <li key={task.id}>
+                  {editingTaskId === task.id ? (
+                    <>
+                      <input type="text" value={editingTaskText} onChange={(e) => setEditingTaskText(e.target.value)} />
+                      <div className="todo-list-btn-group">
+                        <button onClick={() => handleSaveClick(task.id)}>저장</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {task.name}
+                      <div className="todo-list-btn-group">
+                        <button onClick={() => handleEditClick(task.id, task.name)}>수정</button>
+                        <button onClick={() => deleteTask(task.id)}>삭제</button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
             </ul>
             <h3>To-do</h3>
             <ul className="todo-list">
               {incompletedTasks.map((task) => {
                 return (
                   <li key={task.id}>
-                    {task.name}
-                    <div className="todo-list-btn-group">
-                      <button onClick={() => console.log(task.id)}>수정</button>
-                      <button onClick={() => deleteTask(task.id)}>삭제</button>
-                    </div>
+                    {editingTaskId === task.id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editingTaskText}
+                          onChange={(e) => setEditingTaskText(e.target.value)}
+                        />
+                        <div className="todo-list-btn-group">
+                          <button onClick={() => handleSaveClick(task.id)}>저장</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {task.name}
+                        <div className="todo-list-btn-group">
+                          <button onClick={() => handleEditClick(task.id, task.name)}>수정</button>
+                          <button onClick={() => deleteTask(task.id)}>삭제</button>
+                        </div>
+                      </>
+                    )}
                   </li>
                 );
               })}
