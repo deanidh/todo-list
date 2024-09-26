@@ -26,14 +26,10 @@ const SignUpPage = () => {
     <div className="frame">
       <div className="container">
         <div className="title">SIGNUP</div>
-        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <div className="button" onClick={handleSignUp}>
-          회원가입
-        </div>
-        <div className="button" onClick={() => navigate('/')}>
-          돌아가기
-        </div>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div onClick={handleSignUp}>회원가입</div>
+        <div onClick={() => navigate('/')}>돌아가기</div>
       </div>
     </div>
   );

@@ -40,14 +40,10 @@ const LoginPage = () => {
     <div className="frame">
       <div className="container">
         <div className="title">LOGIN</div>
-        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <div className="button" onClick={handleLogin}>
-          로그인
-        </div>
-        <div className="button" onClick={() => navigate('/signup')}>
-          회원가입
-        </div>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button onClick={handleLogin}>로그인</button>
+        <button onClick={() => navigate('/signup')}>회원가입</button>
       </div>
     </div>
   );
