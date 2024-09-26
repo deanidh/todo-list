@@ -1,6 +1,6 @@
 const TodoItem = (props) => {
   return (
-    <li key={props.task.id}>
+    <li>
       {props.editingTaskId === props.task.id ? (
         <>
           <input type="text" value={props.editingTaskText} onChange={(e) => props.setEditingTaskText(e.target.value)} />

@@ -139,6 +139,7 @@ const TodoPage = () => {
             <ul className="todo-list">
               {completedTasks.map((task) => (
                 <TodoItem
+                  key={task.id}
                   task={task}
                   editingTaskId={editingTaskId}
                   editingTaskText={editingTaskText}
@@ -153,6 +154,7 @@ const TodoPage = () => {
             <ul className="todo-list">
               {incompletedTasks.map((task) => (
                 <TodoItem
+                  key={task.id}
                   task={task}
                   editingTaskId={editingTaskId}
                   editingTaskText={editingTaskText}
