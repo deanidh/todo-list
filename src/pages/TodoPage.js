@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import {
-  collection,
-  addDoc,
-  query,
-  getFirestore,
-  getDocs,
-  where,
-  documentId,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from 'firebase/firestore';
+import { collection, addDoc, query, getFirestore, getDocs, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/reducers/authSlice';
 import Loading from '../components/Loading';
+import TodoItem from '../components/TodoItem';
+
 const TodoPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -147,54 +138,30 @@ const TodoPage = () => {
             <h3>Done</h3>
             <ul className="todo-list">
               {completedTasks.map((task) => (
-                <li key={task.id}>
-                  {editingTaskId === task.id ? (
-                    <>
-                      <input type="text" value={editingTaskText} onChange={(e) => setEditingTaskText(e.target.value)} />
-                      <div className="todo-list-btn-group">
-                        <button onClick={() => handleSaveClick(task.id)}>저장</button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {task.name}
-                      <div className="todo-list-btn-group">
-                        <button onClick={() => handleEditClick(task.id, task.name)}>수정</button>
-                        <button onClick={() => deleteTask(task.id)}>삭제</button>
-                      </div>
-                    </>
-                  )}
-                </li>
+                <TodoItem
+                  task={task}
+                  editingTaskId={editingTaskId}
+                  editingTaskText={editingTaskText}
+                  setEditingTaskText={setEditingTaskText}
+                  onEdit={handleEditClick}
+                  onSave={handleSaveClick}
+                  onDelete={deleteTask}
+                />
               ))}
             </ul>
             <h3>To-do</h3>
             <ul className="todo-list">
-              {incompletedTasks.map((task) => {
-                return (
-                  <li key={task.id}>
-                    {editingTaskId === task.id ? (
-                      <>
-                        <input
-                          type="text"
-                          value={editingTaskText}
-                          onChange={(e) => setEditingTaskText(e.target.value)}
-                        />
-                        <div className="todo-list-btn-group">
-                          <button onClick={() => handleSaveClick(task.id)}>저장</button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {task.name}
-                        <div className="todo-list-btn-group">
-                          <button onClick={() => handleEditClick(task.id, task.name)}>수정</button>
-                          <button onClick={() => deleteTask(task.id)}>삭제</button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
+              {incompletedTasks.map((task) => (
+                <TodoItem
+                  task={task}
+                  editingTaskId={editingTaskId}
+                  editingTaskText={editingTaskText}
+                  setEditingTaskText={setEditingTaskText}
+                  onEdit={handleEditClick}
+                  onSave={handleSaveClick}
+                  onDelete={deleteTask}
+                />
+              ))}
             </ul>
           </div>
         )}
