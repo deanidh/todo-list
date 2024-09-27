@@ -16,13 +16,11 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log(user);
       if (user) {
         dispatch(login({ uid: user.uid, email: user.email }));
       } else {
         dispatch(logout());
       }
-
       setLoading(false);
     });
 

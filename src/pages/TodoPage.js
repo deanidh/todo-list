@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, query, getFirestore, getDocs, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { logout } from '../store/reducers/authSlice';
 import Loading from '../components/Loading';
 import TodoItem from '../components/TodoItem';
+import readTasksByCompleted from '../utils/firestore/readTasksByCompleted';
+import createTask from '../utils/firestore/createTask';
+import updateTask from '../utils/firestore/updateTask';
+import deleteTask from '../utils/firestore/deleteTask';
 
 const TodoPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const auth = getAuth();
+
   const handleLogout = () => {
     signOut(auth).then(() => {
       navigate('/');
@@ -19,9 +22,6 @@ const TodoPage = () => {
     });
   };
 
-  const db = getFirestore();
-  const currentUserId = useSelector((state) => state.auth.user.uid);
-  const tasks = collection(db, 'tasks');
   const [task, setTask] = useState('');
   const [completedTasks, setCompletedTasks] = useState([]);
   const [incompletedTasks, setIncompletedTasks] = useState([]);
@@ -29,87 +29,40 @@ const TodoPage = () => {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTaskText, setEditingTaskText] = useState('');
 
-  const createTask = async () => {
-    try {
-      setLoading(true);
-      const docRef = await addDoc(tasks, {
-        name: task,
-        completed: false,
-        userId: auth.currentUser.uid,
-        createdAt: new Date(),
-      });
-      console.log('DB 저장 성공: ', docRef.id);
-      setTask('');
-      await fetchTasks();
-    } catch (e) {
-      console.log('DB 저장 실패: ', e);
-    }
-  };
-
-  const readTasksByCompleted = async (completed) => {
-    const q = query(tasks, where('completed', '==', completed));
-    const querySnapshot = await getDocs(q);
-    const result = querySnapshot.docs
-      .filter((doc) => doc.data().userId === currentUserId)
-      .map((doc) => ({ id: doc.id, ...doc.data() }));
-    return result;
+  const handleAddClick = async () => {
+    setLoading(true);
+    await createTask(task);
+    setTask('');
+    await fetchTasks();
+    setLoading(false);
   };
 
   const fetchTasks = async () => {
     setLoading(true);
-    try {
-      setIncompletedTasks(await readTasksByCompleted(false));
-      setCompletedTasks(await readTasksByCompleted(true));
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setLoading(false);
-    }
+    setIncompletedTasks(await readTasksByCompleted(false));
+    setCompletedTasks(await readTasksByCompleted(true));
+    setLoading(false);
   };
 
-  const updateTask = async (id) => {
-    setLoading(true);
-    try {
-      const docRef = doc(db, 'tasks', id);
-      await updateDoc(docRef, { name: editingTaskText });
-    } catch (e) {
-      console.log('DB 업데이트 실패: ', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteTask = async (id) => {
-    setLoading(true);
-    try {
-      const docRef = doc(db, 'tasks', id);
-      await deleteDoc(docRef);
-      console.log('DB 삭제 완료: ', id);
-      await fetchTasks();
-    } catch (e) {
-      console.log('DB 삭제 실패: ', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditClick = async (id, text) => {
+  const handleEditClick = (id, text) => {
     setEditingTaskId(id);
     setEditingTaskText(text);
   };
 
   const handleSaveClick = async (id) => {
     setLoading(true);
-    try {
-      updateTask(id);
-      await fetchTasks();
-      setEditingTaskId(null);
-      setEditingTaskText('');
-    } catch (e) {
-      console.log('DB Update 실패: ', e);
-    } finally {
-      setLoading(false);
-    }
+    await updateTask(id, editingTaskText);
+    await fetchTasks();
+    setEditingTaskId(null);
+    setEditingTaskText('');
+    setLoading(false);
+  };
+
+  const handleDeleteClick = async (id) => {
+    setLoading(true);
+    await deleteTask(id);
+    await fetchTasks();
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -127,7 +80,7 @@ const TodoPage = () => {
             onChange={(e) => setTask(e.target.value)}
             placeholder="할 일을 입력하세요"
           />
-          <button className="button" onClick={createTask}>
+          <button className="button" onClick={handleAddClick}>
             추가
           </button>
         </div>
@@ -137,7 +90,7 @@ const TodoPage = () => {
           <div className="todo-list-wrap">
             <h3>Done</h3>
             <ul className="todo-list">
-              {completedTasks.map((task) => (
+              {completedTasks.sort(task.createdAt).map((task) => (
                 <TodoItem
                   key={task.id}
                   task={task}
@@ -146,13 +99,13 @@ const TodoPage = () => {
                   setEditingTaskText={setEditingTaskText}
                   onEdit={handleEditClick}
                   onSave={handleSaveClick}
-                  onDelete={deleteTask}
+                  onDelete={handleDeleteClick}
                 />
               ))}
             </ul>
             <h3>To-do</h3>
             <ul className="todo-list">
-              {incompletedTasks.map((task) => (
+              {incompletedTasks.sort(task.createdAt).map((task) => (
                 <TodoItem
                   key={task.id}
                   task={task}
@@ -161,7 +114,7 @@ const TodoPage = () => {
                   setEditingTaskText={setEditingTaskText}
                   onEdit={handleEditClick}
                   onSave={handleSaveClick}
-                  onDelete={deleteTask}
+                  onDelete={handleDeleteClick}
                 />
               ))}
             </ul>
